@@ -20,16 +20,19 @@ def get_db():
         db.close()
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
 @app.post("/signup")
 def signup(username: str, password: str):
-    return {"username": username, "password": password}
+    db = next(get_db())
+    user = schemas.UserCreate(username=username, password=password)
+    return service.create_user(db=db, user=user)
 
 
 @app.post("/login")
 def login(username: str, password: str):
-    return {"username": username, "password": password}
+    db = next(get_db())
+    user = service.get_user_by_username(db=db, username=username)
+    if not user:
+        return {"message": "Invalid credentials"}
+    if not service.verify_password(password, user.password):
+        return {"message": "Invalid credentials"}
+    return user
